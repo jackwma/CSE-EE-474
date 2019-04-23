@@ -44,7 +44,5 @@ typedef struct Status {
   unsigned short batteryState;
 } statusData;
 
-typedef struct schedulerData {
-
-} schedulerData;
 #endif // DATASTRUCTS_H
+
