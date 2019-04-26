@@ -1,6 +1,27 @@
 #ifndef TCB_H
 #define TCB_H
 
+struct measureTCB
+{
+    void (*measureTask)(void*);
+    void* measureDataPtr;
+};
+typedef struct measureTCB measure;
+
+struct computeTCB
+{
+    void (*computeTask)(void*);
+    void* computeDataPtr;
+};
+typedef struct computeTCB compute;
+
+struct displayTCB
+{
+    void (*displayTask)(void*);
+    void* displayDataPtr;
+};
+typedef struct displayTCB display;
+
 struct warningAlarmTCB
 {
     void (*warningAlarmTask)(void*);
@@ -34,7 +55,6 @@ typedef struct schedulerStruct dataScheduler;
 extern scheduler* schTCB;
 
 void TCBMain();
-
 
 
 #endif
