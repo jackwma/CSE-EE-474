@@ -122,15 +122,6 @@ void warning(){
     }
 }
 
-
-
-
-
-
-
-
-
-
 void measureTask() {
 
     if (mCount%2 == 0){
@@ -210,6 +201,25 @@ int main() {
     printf("corrected sPressure：%f\n", *(dataCompute.sysCorrectedPtr));
     printf("corrected dPressure：%f\n", *(dataCompute.diasCorrectedPtr));
     printf("corrected pulse：%f\n", *(dataCompute.prCorrectedPtr));
+}
+
+void statusTask(void* statusData){ //
+    dataStatus* data = (dataStatus*)statusData;;
+    *(data->batteryStatePtr) -= 1;
+}
+
+void schedulerTask(void* scheduleData, unsigned long int gs){
+    dataScheduler* data = (dataScheduler*)scheduleData;
+    data->mTCBPtr->measureTask(data->mTCBPtr->measureDataPtr);
+    data->cTCBPtr->computeTask(data->cTCBPtr->computeDataPtr);
+    data->dTCBPtr->displayTask(data->dTCBPtr->displayDataPtr);
+    data->wTCBPtr->warningAlarmTask(data->wTCBPtr->warningAlarmDataPtr);
+    data->sTCBPtr->statusTask(data->wTCBPtr->warningAlarmDataPtr);
+}
+
+void warningAlarmTask(void* warningAlarmData){ //
+  dataWarningAlarm* dataptr = (dataWarningAlarm*)warningAlarmData;
+  dataWarningAlarm data = *dataptr;
 }
 
 
