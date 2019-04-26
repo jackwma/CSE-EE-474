@@ -1,85 +1,22 @@
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>
-#include <task.h>
 
-unsigned int temperatureRaw = 75;
-unsigned int systolicPressRaw = 80;
-unsigned int diastolicPressRaw = 80;
-unsigned int pulseRateRaw = 50;
+unsigned tempR = 30;
+unsigned sysPreR = 50;
+unsigned diaPreR = 50;
+unsigned pulseR = 70;
+unsigned short battery = 200;
+double tempC = 0;
+double sysPreC = 0;
+double diaPreC = 50;
+double pulseC = 50;
 long mCount = 0;
 int sysComp = 1;
 int measComp = 1;
 int pComp = 1;
 
 
-void measureTask(void* measureData) {
-    struct measureStruct dataMeasure = {&temperatureRaw, &systolicPressRaw, &diastolicPressRaw, &pulseRateRaw};
-    struct measureStruct *measurePtr = &dataMeasure;
-    if (mCount%2 == 0){
-        if (measComp) {
-            *(dataMeasure.temperatureRawPtr) +=2;
-        }else {
-            *(dataMeasure.temperatureRawPtr) -= 2;
-        }
-    } else {
-        if (measComp) {
-            *(dataMeasure.temperatureRawPtr) +=1;
-        }else {
-            *(dataMeasure.temperatureRawPtr) -=1;
-        }
-    }
-    if (temperatureRaw > 50) {
-        measComp = 0;
-    } else if (temperatureRaw < 15){
-        measComp = 1;
-    }
-
-    if (!sysComp) {
-        if(mCount%2 ==0) {
-            *(dataMeasure.systolicPressRaw) +=3;
-        } else {
-            *(dataMeasure.systolicPressRaw) -=1;
-        }
-        if(systolicPressRaw > 100) {
-            sysComp = 1;
-            *(dataMeasure.systolicPressRaw) = 80;
-        }
-    } else {
-        if(mCount%2 ==0) {
-            *(dataMeasure.diastolicPressRaw) +=2;
-        } else {
-            *(dataMeasure.diastolicPressRaw) -=1;
-        }
-        if(diastolicPressRaw < 40) {
-            sysComp = 1;
-            *(dataMeasure.diastolicPressRaw) = 80;
-        }
-    }
-
-    if (mCount%2 == 0){
-        if (pComp) {
-            *(dataMeasure.pulseRateRawPtr) -=1;
-        }else {
-            *(dataMeasure.pulseRateRawPtr) +=1;
-        }
-    } else {
-        if (pComp) {
-            *(dataMeasure.pulseRateRawPtr) +=3;
-        }else {
-            *(dataMeasure.pulseRateRawPtr) -=3;
-        }
-    }
-    if (pulseRateRaw > 40) {
-        measComp = 0;
-    } else if (temperatureRaw < 15){
-        measComp = 1;
-    }
-    mCount+=1;
-}
-
-
-        
 struct computeStruct{
     unsigned int* temperatureRawPtr;
     unsigned int* systolicPressRawPtr;
@@ -90,12 +27,172 @@ struct computeStruct{
     double* diasCorrectedPtr;
     double* prCorrectedPtr;
 };
+struct computeStruct dataToCompute = {&tempR, &sysPreR, &diaPreR, &pulseR, &tempC, &sysPreC, &diaPreC, &pulseC};
+struct computeStruct *computePtr = &dataToCompute;
 
-void compute(struct computeStruct *ComputePtr){
-    *(ComputePtr -> tempCorrectedPtr) = *(ComputePtr -> temperatureRawPtr) * 0.75 +5;
-    *(ComputePtr -> sysCorrectedPtr) = *(ComputePtr -> systolicPressRawPtr) * 9 +2;
-    *(ComputePtr -> diasCorrectedPtr) = *(ComputePtr -> diastolicPressRawPtr) * 1.5 +6;
-    *(ComputePtr -> prCorrectedPtr) = *(ComputePtr -> pulseRateRawPtr) * 3 +8;
+
+struct displayStruct{
+    double* tempCorrectedPtr;
+    double* sysCorrectedPtr;
+    double* diasCorrectedPtr;
+    double* prCorrectedPtr;
+    unsigned short* batteryStatePtr;
+};
+struct displayStruct dataToDis = { &tempC, &sysPreC, &diaPreC, &pulseC, &battery};
+struct displayStruct *displayPtr = &dataToDis;
+
+
+
+void compute(){
+    *(computePtr -> tempCorrectedPtr) = *(computePtr -> temperatureRawPtr) * 0.75 +5;
+    *(computePtr -> sysCorrectedPtr) = *(computePtr -> systolicPressRawPtr) * 9 +2;
+    *(computePtr -> diasCorrectedPtr) = *(computePtr -> diastolicPressRawPtr) * 1.5 +6;
+    *(computePtr -> prCorrectedPtr) = *(computePtr -> pulseRateRawPtr) * 3 +8;
+}
+
+
+void display(){
+    printf("Temperature:");
+    tft.print(*(dataToDis.tempCorrectedPtr));
+    printf("Systolic Pressure:");
+    ftf.print(*(dataToDis.sysCorrectedPtr));
+    printf("Diastolic Pressure:");
+    tft.print(*(dataToDis.diasCorrectedPtr));
+    printf("Pulse rate:");
+    tft.print(*(dataToDis.prCorrectedPtr));
+    printf("Battery:");
+    tft.print(*(dataToDis.batteryStatePtr));
+}
+
+
+int tempWarning = 0;
+int  sysWarning = 0;
+int  diasWarning = 0;
+int  bpWarning = 0;
+int  batteryWarning =0;
+
+struct warningAlarmStruct{
+    int *tempWarningPtr;
+    int *sysWarningPtr;
+    int *diasWarningPtr;
+    int *bpWarningPtr;
+    int *batteryWarningPtr;
+};
+struct warningAlarmStruct warningState = {&tempWarning, &sysWarning, &diasWarning, &bpWarning, &batteryWarning};
+struct warningAlarmStruct *warningPtr = &warningState;
+
+struct measureStruct{
+    unsigned int* temperatureRawPtr;
+    unsigned int* systolicPressRawPtr;
+    unsigned int* diastolicPressRawPtr;
+    unsigned int* pulseRateRawPtr;
+};
+
+struct measureStruct dataMeasure = {&tempR, &sysPreR, &diaPreR, &pulseR};
+struct measureStruct *measurePtr = &dataMeasure;
+
+
+
+void warning(){
+    if(*(dataMeasure.temperatureRawPtr)>=36.1 && *(dataMeasure.temperatureRawPtr)<=37.8){
+        *(warningPtr -> tempWarningPtr) = 0;
+    }else{
+        *(warningPtr -> tempWarningPtr) = 1;
+    }
+    if(*(dataMeasure.systolicPressRawPtr) >= 120){
+        *(warningPtr ->sysWarningPtr) = 0;
+    }else{
+        *(warningPtr ->sysWarningPtr) = 1;
+    }
+    if(*(dataMeasure.diastolicPressRawPtr) >= 80){
+        *(warningPtr -> diasWarningPtr) = 0;
+    }else{
+        *(warningPtr -> diasWarningPtr) = 1;
+    }
+    if(*(dataMeasure.pulseRateRawPtr)>=60 && *(dataMeasure.pulseRateRawPtr)<=100){
+        *(warningPtr -> bpWarningPtr) = 0;
+
+    }else{
+        *(warningPtr -> bpWarningPtr) = 1;
+    }
+    if(battery>= 0.2*200){
+        *(warningPtr -> batteryWarningPtr) = 0;
+    }else{
+        *(warningPtr -> batteryWarningPtr) = 1;
+    }
+}
+
+
+
+
+
+
+
+
+
+
+void measureTask() {
+
+    if (mCount%2 == 0){
+        if (measComp) {
+            *(measurePtr -> temperatureRawPtr) +=2;
+        }else {
+            *(measurePtr -> temperatureRawPtr) -=2;
+        }
+    } else {
+        if (measComp) {
+            *(measurePtr -> temperatureRawPtr) +=1;
+        }else {
+            *(measurePtr -> temperatureRawPtr) -=1;
+        }
+    }
+    if (*(dataMeasure.temperatureRawPtr) > 50) {
+        measComp = 0;
+    } else if (*(dataMeasure.temperatureRawPtr) < 15){
+        measComp = 1;
+    }
+
+    if (!sysComp) {
+        if(mCount%2 ==0) {
+            *(measurePtr -> systolicPressRawPtr) +=3;
+        } else {
+            *(measurePtr -> systolicPressRawPtr) -=1;
+        }
+        if(*(dataMeasure.systolicPressRawPtr) > 100) {
+            sysComp = 1;
+            *(measurePtr -> systolicPressRawPtr) = 80;
+        }
+    } else {
+        if(mCount%2 ==0) {
+            *(measurePtr -> diastolicPressRawPtr) +=2;
+        } else {
+            *(measurePtr -> diastolicPressRawPtr) -=1;
+        }
+        if(*(dataMeasure.diastolicPressRawPtr) < 40) {
+            sysComp = 1;
+            *(measurePtr -> diastolicPressRawPtr) = 80;
+        }
+    }
+
+    if (mCount%2 == 0){
+        if (pComp) {
+            *(measurePtr -> pulseRateRawPtr) -=1;
+        }else {
+            *(measurePtr -> pulseRateRawPtr) +=1;
+        }
+    } else {
+        if (pComp) {
+            *(measurePtr -> pulseRateRawPtr) +=3;
+        }else {
+            *(measurePtr -> pulseRateRawPtr) -=3;
+        }
+    }
+    if (*(dataMeasure.pulseRateRawPtr) > 40) {
+        measComp = 0;
+    } else if ( *(dataMeasure.pulseRateRawPtr)< 15){
+        measComp = 1;
+    }
+    mCount+=1;
 }
 
 int main() {
@@ -107,7 +204,6 @@ int main() {
     double sysPreC = 0;
     double diaPreC = 50;
     double pulseC = 50;
-    struct computeStruct dataCompute = {&tempR, &sysPreR, &diaPreR, &pulseR, &tempC, &sysPreC, &diaPreC, &pulseC};
     struct computeStruct *computePtr = &dataCompute;
     compute(computePtr);
     printf("corrected temperature：%f\n", *(dataCompute.tempCorrectedPtr));
@@ -116,22 +212,5 @@ int main() {
     printf("corrected pulse：%f\n", *(dataCompute.prCorrectedPtr));
 }
 
-void warningAlarmTask(void* warningAlarmData){ // 
-    dataWarningAlarm* dataptr = (dataWarningAlarm*)warningAlarmData;
-    dataWarningAlarm data = *dataptr;
-}
 
-void statusTask(void* statusData){ //
-    dataStatus* data = (dataStatus*)statusData;;
-    *(data->batteryStatePtr) -= 1;
-}
-
-void schedulerTask(void* scheduleData, unsigned long int gs){
-    dataScheduler* data = (dataScheduler*)scheduleData;
-    data->mTCBPtr->measureTask(data->mTCBPtr->measureDataPtr);
-    data->cTCBPtr->computeTask(data->cTCBPtr->computeDataPtr);
-    data->dTCBPtr->displayTask(data->dTCBPtr->displayDataPtr);
-    data->wTCBPtr->warningAlarmTask(data->wTCBPtr->warningAlarmDataPtr);
-    data->sTCBPtr->statusTask(data->wTCBPtr->warningAlarmDataPtr);
-}
 
