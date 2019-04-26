@@ -43,7 +43,7 @@ struct displayStruct *displayPtr = &dataToDis;
 
 
 
-void compute(){
+void computeTask(){
     *(computePtr -> tempCorrectedPtr) = *(computePtr -> temperatureRawPtr) * 0.75 +5;
     *(computePtr -> sysCorrectedPtr) = *(computePtr -> systolicPressRawPtr) * 9 +2;
     *(computePtr -> diasCorrectedPtr) = *(computePtr -> diastolicPressRawPtr) * 1.5 +6;
@@ -222,5 +222,44 @@ void warningAlarmTask(void* warningAlarmData){ //
   dataWarningAlarm data = *dataptr;
 }
 
+measure mTCB;
+    (*((dataMeasure*)(mTCB.measureDataPtr))).temperatureRawPtr = &tempR;
+    (*((dataMeasure*)(mTCB.measureDataPtr))).systolicPressRawPtr = &sysPreR;
+    (*((dataMeasure*)mTCB.measureDataPtr)).diastolicPressRawPtr = &diaPreR;
+    (*((dataMeasure*)mTCB.measureDataPtr)).pulseRateRawPtr = &pulseR;
+
+compute cTCB;
+    (*((dataCompute*)cTCB.computeDataPtr)).temperatureRawPtr = &tempR;
+    (*((dataCompute*)cTCB.computeDataPtr)).systolicPressRawPtr = &sysPreR;
+    (*((dataCompute*)cTCB.computeDataPtr)).diastolicPressRawPtr = &diaPreR;
+    (*((dataCompute*)cTCB.computeDataPtr)).pulseRateRawPtr = &pulseR;
+    (*((dataCompute*)cTCB.computeDataPtr)).tempCorrectedPtr = &tempC;
+    (*((dataCompute*)cTCB.computeDataPtr)).sysCorrectedPtr = &sysPreC;
+    (*((dataCompute*)cTCB.computeDataPtr)).diasCorrectedPtr = &diaPreC;
+    (*((dataCompute*)cTCB.computeDataPtr)).prCorrectedPtr = &pulseC;
+
+display dTCB;
+    (*((dataDisplay*)dTCB.displayDataPtr)).tempCorrectedPtr = &tempC;
+    (*((dataDisplay*)dTCB.displayDataPtr)).sysCorrectedPtr = &sysPreC;
+    (*((dataDisplay*)dTCB.displayDataPtr)).diasCorrectedPtr = &diaPreC;
+    (*((dataDisplay*)dTCB.displayDataPtr)).prCorrectedPtr = &pulseC;
+    (*((dataDisplay*)dTCB.displayDataPtr)).batteryStatePtr = &battery;
+
+warningAlarm wTCB;
+    (*((dataWarningAlarm*)wTCB.warningAlarmDataPtr)).tempCorrectedPtr = &tempC;
+    (*((dataWarningAlarm*)wTCB.warningAlarmDataPtr)).sysCorrectedPtr = &sysPreC;
+    (*((dataWarningAlarm*)wTCB.warningAlarmDataPtr)).diasCorrectedPtr = &diaPreC;
+    (*((dataWarningAlarm*)wTCB.warningAlarmDataPtr)).prCorrectedPtr = &pulseC;
+    (*((dataWarningAlarm*)wTCB.warningAlarmDataPtr)).batteryStatePtr = &battery;
+
+status sTCB;
+    (*((dataStatus*)sTCB.statusDataPtr)).batteryStatePtr = &battery;
+
+scheduler* schTCB;
+    (*((dataScheduler*)schTCB->schedulerDataPtr)).mTCBPtr = &mTCB;
+    (*((dataScheduler*)schTCB->schedulerDataPtr)).cTCBPtr = &cTCB;
+    (*((dataScheduler*)schTCB->schedulerDataPtr)).dTCBPtr = &dTCB;
+    (*((dataScheduler*)schTCB->schedulerDataPtr)).wTCBPtr = &wTCB;
+    (*((dataScheduler*)schTCB->schedulerDataPtr)).sTCBPtr = &sTCB;
 
 

@@ -43,6 +43,10 @@ struct schedulerTCB
 };
 typedef struct schedulerTCB scheduler;
 
+extern measure mTCB;
+extern compute cTCB;
+extern display dTCB;
+extern warningAlarm wTCB;
 extern status sTCB;
 struct schedulerStruct{
     measure* mTCBPtr;
